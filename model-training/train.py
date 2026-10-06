@@ -83,7 +83,7 @@ def main() -> None:
         workers=8,
         cache=True,
         project="runs/detect",
-        name="train13",
+        name="train1",
         exist_ok=True,
         plots=True,
         save=True,
