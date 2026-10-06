@@ -31,7 +31,7 @@ Threat Detekt currently supports detection of the following object classes:
 
 * person
 
-* pistol
+* handgun
 
 * rifle
 
