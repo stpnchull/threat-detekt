@@ -1,0 +1,13 @@
+path:  # dataset root directory
+train:  # train images (relative to 'path')
+val:  # validation images (relative to 'path').
+test:  # test images (relative to 'path').
+
+
+# Classes
+names:
+  0: person
+  1: handgun
+  2: rifle
+  3: shotgun
+  4: knife
