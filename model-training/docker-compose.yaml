@@ -1,0 +1,20 @@
+version: '3'
+services:
+  threat-detekt-model-training:
+    image: threat-detekt-model-training:latest
+    volumes:
+      - ./runs/detect:/app/runs/detect
+      - #path to dataset
+    ports:
+      - "8888:8888"
+      - "6006:6006"
+    ipc: host
+    deploy:
+      resources:
+        limits: 
+          memory: 24G
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
