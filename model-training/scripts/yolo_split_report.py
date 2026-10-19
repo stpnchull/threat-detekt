@@ -59,6 +59,13 @@ The class table has two counts:
 An image with three rifles counts as one rifle image and three rifle
 objects.
 
+Current split
+After the per-split tables, a current-split summary shows how the
+dataset is divided today. The overall block lists train, val, and test
+image counts with their share of the full dataset. The per-class table
+lists how many images of each class sit in train, val, and test, and
+what share of that class those counts are.
+
 Rebalance
 The rebalance table combines every split and compares classes by image
 count. RecommendedAdd is how many more images of that class would
@@ -356,6 +363,99 @@ def print_split_report(split_name: str, stats: dict, class_name_map: Dict[int, s
             f"{image_counts.get(class_id, 0):<10} "
             f"{object_counts.get(class_id, 0):<10}"
         )
+
+
+def _pct(part: int, whole: int) -> str:
+    if whole <= 0:
+        return "n/a"
+    return f"{100.0 * part / whole:.1f}%"
+
+
+def print_current_split_summary(
+    train_stats: dict,
+    val_stats: dict,
+    test_stats: dict,
+    class_name_map: Dict[int, str],
+) -> None:
+    """Print how images are currently divided across train, val, and test."""
+    train_images = train_stats["image_count"]
+    val_images = val_stats["image_count"]
+    test_images = test_stats["image_count"]
+    total_images = train_images + val_images + test_images
+
+    print("\nCURRENT SPLIT SUMMARY")
+    print("-" * 110)
+    print(
+        "Overall image counts and each split's share of the full dataset:"
+    )
+    print()
+    print(
+        f"{'Split':<10} {'Images':<12} {'Share of dataset':<18}"
+    )
+    print("-" * 40)
+    print(
+        f"{'train':<10} {train_images:<12} {_pct(train_images, total_images):<18}"
+    )
+    print(
+        f"{'val':<10} {val_images:<12} {_pct(val_images, total_images):<18}"
+    )
+    print(
+        f"{'test':<10} {test_images:<12} {_pct(test_images, total_images):<18}"
+    )
+    print(
+        f"{'total':<10} {total_images:<12} {_pct(total_images, total_images):<18}"
+    )
+
+    train_ic: Counter = train_stats["image_counts"]
+    val_ic: Counter = val_stats["image_counts"]
+    test_ic: Counter = test_stats["image_counts"]
+    total_image_counts, total_object_counts = merge_class_counts(
+        train_stats, val_stats, test_stats
+    )
+    all_class_ids = get_all_known_class_ids(
+        class_name_map, total_image_counts, total_object_counts
+    )
+
+    print()
+    print(
+        "Per-class image counts in each split, and each split's share "
+        "of that class:"
+    )
+    print()
+
+    if not all_class_ids:
+        print("No class data found across any split.")
+        return
+
+    header = (
+        f"{'Class ID':<10} {'Class Name':<18} {'Total':<8} "
+        f"{'Train':<8} {'Train%':<8} "
+        f"{'Val':<8} {'Val%':<8} "
+        f"{'Test':<8} {'Test%':<8}"
+    )
+    print(header)
+    print("-" * 110)
+
+    for class_id in all_class_ids:
+        class_name = class_name_map.get(class_id, f"class_{class_id}")
+        tr = train_ic.get(class_id, 0)
+        va = val_ic.get(class_id, 0)
+        te = test_ic.get(class_id, 0)
+        total = tr + va + te
+
+        print(
+            f"{class_id:<10} {class_name:<18} {total:<8} "
+            f"{tr:<8} {_pct(tr, total):<8} "
+            f"{va:<8} {_pct(va, total):<8} "
+            f"{te:<8} {_pct(te, total):<8}"
+        )
+
+    print()
+    print(
+        "Notes: Total counts images that contain the class at least once. "
+        "Train%, Val%, and Test% are shares of that class's images, "
+        "not shares of the full dataset."
+    )
 
 
 def print_rebalance_summary(
@@ -720,14 +820,36 @@ def main() -> None:
     print("=" * 70)
     print(f"YAML File            : {yaml_path}")
     print(f"Dataset Root         : {dataset_root if dataset_root else yaml_dir}")
-    print(f"Train Images         : {train_stats['image_count']}")
-    print(f"Val Images           : {val_stats['image_count']}")
-    print(f"Test Images          : {test_stats['image_count']}")
+    total_images = (
+        train_stats["image_count"]
+        + val_stats["image_count"]
+        + test_stats["image_count"]
+    )
+    print(
+        f"Train Images         : {train_stats['image_count']} "
+        f"({_pct(train_stats['image_count'], total_images)})"
+    )
+    print(
+        f"Val Images           : {val_stats['image_count']} "
+        f"({_pct(val_stats['image_count'], total_images)})"
+    )
+    print(
+        f"Test Images          : {test_stats['image_count']} "
+        f"({_pct(test_stats['image_count'], total_images)})"
+    )
+    print(f"Total Images         : {total_images}")
     print("=" * 70)
 
     print_split_report("train", train_stats, class_name_map)
     print_split_report("val", val_stats, class_name_map)
     print_split_report("test", test_stats, class_name_map)
+
+    print_current_split_summary(
+        train_stats=train_stats,
+        val_stats=val_stats,
+        test_stats=test_stats,
+        class_name_map=class_name_map,
+    )
 
     print_rebalance_summary(
         train_stats=train_stats,
