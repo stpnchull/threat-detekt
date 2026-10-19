@@ -25,6 +25,10 @@ The repository includes tooling and source code for:
 
 Threat Detekt is intended to act as a detection and decision-support component within a broader security architecture rather than as a standalone security system.
 
+## Dataset
+
+To build or expand a custom training set from Open Images, configure train / val / test splits, add hard negatives, and later grow the set with auto-labeling, see [docs/dataset.md](docs/dataset.md).
+
 ## Capabilities
 
 Threat Detekt currently supports detection of the following object classes:
